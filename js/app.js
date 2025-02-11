@@ -10,6 +10,7 @@ function agregarEvento(){
 }
 function navegar(event){
     console.log(event);
+    ocultarPaginas();
     let paginaDestino=event.detail.to;
     if(paginaDestino=="/"){
         ocultarPaginas();
@@ -23,6 +24,13 @@ function navegar(event){
         ocultarPaginas();
         document.querySelector("#registro").style.display="block";
     }
+    else if(paginaDestino=="/home"){
+        ocultarPaginas();
+        document.querySelector("#home").style.display="block";
+    }
+   
+    
+    
     
 }
 
@@ -70,10 +78,9 @@ function login(){
             if(data.mensaje){
                 return txtMensajeError.innerHTML = `${data.mensaje}`
             }else{
-                ocultarPaginas();
-                document.querySelector("#home").style.display="block";
                 let token = document.getElementById("datos")
                 token.innerHTML = `Nombre:${usuario} <br/> TOKEN: ${TOKEN}`
+                document.querySelector("ion-router").push("/home");
             }
             
         })
