@@ -19,7 +19,7 @@ function navegar(event){
         ocultarPaginas();
         document.querySelector("#login").style.display="block";
     }
-    else if(paginaDestino=="/Registro"){
+    else if(paginaDestino=="/registro"){
         ocultarPaginas();
         document.querySelector("#registro").style.display="block";
     }
