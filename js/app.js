@@ -1,17 +1,39 @@
 agregarEvento();
 ocultarPaginas();
+document.getElementById("cerrarSesion").style.display="none";
+
+
 
 let TOKEN;
+
+
 
 function agregarEvento(){
     document.querySelector("#ruteo").addEventListener("ionRouteWillChange",navegar);
     document.querySelector("#btnLogin").addEventListener("click",login);
-    
+
 }
+function cerrarSesion (){
+    cerrarMenu()
+    localStorage.removeItem("TOKEN")
+    document.querySelector("ion-router").push("/login")
+    document.getElementById("cerrarSesion").style.display="none";
+    document.getElementById("itemRegistro").style.display="block";
+}
+
 function navegar(event){
     console.log(event);
     ocultarPaginas();
     let paginaDestino=event.detail.to;
+    //SI tengo el token en el localstorage, se mantiene la sesion
+    if(localStorage.getItem("TOKEN")){
+        console.log(localStorage.getItem("TOKEN"));
+        document.querySelector("ion-router").push("/home");
+        document.getElementById("itemRegistro").style.display="none";
+        document.getElementById("cerrarSesion").style.display="block";
+    }
+
+
     if(paginaDestino=="/"){
         ocultarPaginas();
         document.querySelector("#main-content").style.display="block";
@@ -73,14 +95,18 @@ function login(){
         .then(res=> res.json())
         .then(data => {
             TOKEN=data.apiKey
+            
             console.log("TOKEN:"+ TOKEN)
             console.log(data)
             if(data.mensaje){
                 return txtMensajeError.innerHTML = `${data.mensaje}`
             }else{
+                localStorage.setItem("TOKEN",TOKEN)
                 let token = document.getElementById("datos")
                 token.innerHTML = `Nombre:${usuario} <br/> TOKEN: ${TOKEN}`
                 document.querySelector("ion-router").push("/home");
+                
+
             }
             
         })
