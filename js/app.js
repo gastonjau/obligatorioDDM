@@ -5,20 +5,27 @@ document.getElementById("cerrarSesion").style.display="none";
 
 
 let TOKEN;
+let IDUSUARIO;
 
 
 
 function agregarEvento(){
     document.querySelector("#ruteo").addEventListener("ionRouteWillChange",navegar);
     document.querySelector("#btnLogin").addEventListener("click",login);
+    document.getElementById("btnAgregarActividad").addEventListener("click",agregarActividad);
 
-}
+}   
 function cerrarSesion (){
     cerrarMenu()
     localStorage.removeItem("TOKEN")
+    localStorage.removeItem("IDUSUARIO")
     document.querySelector("ion-router").push("/login")
     document.getElementById("cerrarSesion").style.display="none";
     document.getElementById("itemRegistro").style.display="block";
+    let parrafodata = document.getElementById("datos")
+        
+    parrafodata.innerHTML = ``
+    
 }
 
 function navegar(event){
@@ -31,6 +38,7 @@ function navegar(event){
         document.querySelector("ion-router").push("/home");
         document.getElementById("itemRegistro").style.display="none";
         document.getElementById("cerrarSesion").style.display="block";
+        Session()
     }
 
 
@@ -95,18 +103,13 @@ function login(){
         .then(res=> res.json())
         .then(data => {
             TOKEN=data.apiKey
-            
-            console.log("TOKEN:"+ TOKEN)
-            console.log(data)
+            IDUSUARIO=data.id
             if(data.mensaje){
                 return txtMensajeError.innerHTML = `${data.mensaje}`
             }else{
                 localStorage.setItem("TOKEN",TOKEN)
-                let token = document.getElementById("datos")
-                token.innerHTML = `Nombre:${usuario} <br/> TOKEN: ${TOKEN}`
+                localStorage.setItem("IDUSUARIO",IDUSUARIO)
                 document.querySelector("ion-router").push("/home");
-                
-
             }
             
         })
@@ -114,4 +117,121 @@ function login(){
         }catch(err){
             txtMensajeError.innerHTML = `${err.message.toUpperCase()}`
         }
+}
+
+function Session(){
+    
+    TOKEN = localStorage.getItem("TOKEN")
+    IDUSUARIO = localStorage.getItem("IDUSUARIO")
+
+    let url = `https://movetrack.develotion.com/registros.php?idUsuario=${+IDUSUARIO}`
+    fetch(url,{
+        method:'GET',
+        headers:{
+            'Content-Type': 'application/json',
+            apikey: TOKEN,
+            iduser: +IDUSUARIO,
+        },
+        params: {
+            idUsuario: +IDUSUARIO
+        }
+    })
+    .then(res=> res.json())
+    .then(data => {
+        let parrafodata = document.getElementById("datos")
+        parrafodata.innerHTML = ``
+        data.registros.forEach(async (element ) => {
+            let info = await obtenerActividad(element.idActividad)
+            parrafodata.innerHTML += `<div style="border-top:1px solid black; border-bottom:1px solid black">id: ${element.id} <br> nombreActividad: ${info.nombre}<br> idUsuario: ${element.idUsuario}<br> tiempo: ${element.tiempo}<br> fecha:${element.fecha} <br> <img src="https://movetrack.develotion.com/imgs/${info.imagen}.png" width="50px" height:"50px" ></img><br><ion-button size="small" color="danger" onclick="eliminarRegistro(${element.id})">eliminar</ ion-button> </div>`
+        })
+    })
+
+
+
+
+
+}
+
+async function obtenerActividad (idActividad){
+    TOKEN = localStorage.getItem("TOKEN")
+    IDUSUARIO = localStorage.getItem("IDUSUARIO")
+    let url = "https://movetrack.develotion.com/actividades.php"
+    try {
+        const res = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                apikey: TOKEN,
+                iduser: +IDUSUARIO,
+            }
+        });
+
+        const data = await res.json();
+        const act = data.actividades.filter(actividad => actividad.id == idActividad);
+
+        console.log(act);
+
+        return act ? act[0] : "Actividad no encontrada";
+        
+    } catch (error) {
+        console.error("Error obteniendo actividad:", error);
+        return "Error al obtener actividad";
+    }
+}
+
+
+function agregarActividad (){
+    let idActividad = document.getElementById("idActividad").value
+    let minutosTiempo = document.getElementById("minutosTiempo").value
+    let fecha = document.getElementById("fecha").value
+    TOKEN = localStorage.getItem("TOKEN")
+    IDUSUARIO = localStorage.getItem("IDUSUARIO")
+
+        
+            let url = `https://movetrack.develotion.com/registros.php`
+            fetch(url,{
+                method:'POST',
+                headers:{
+                    'Content-Type': 'application/json',
+                    apikey: TOKEN,
+                    iduser: IDUSUARIO,
+                },
+                body: JSON.stringify({
+                    "idActividad": idActividad,
+                    "idUsuario": IDUSUARIO,
+                    "tiempo": minutosTiempo,
+                    "fecha": fecha
+                })
+            })
+            .then(res=> res.json())
+            .then(data => {
+                Session()
+                console.log(JSON.stringify(data) + "añadido correctamente");
+                
+            })
+        
+}
+
+
+function eliminarRegistro (idRegistro){
+    TOKEN = localStorage.getItem("TOKEN")
+    IDUSUARIO = localStorage.getItem("IDUSUARIO")
+    let url = `https://movetrack.develotion.com/registros.php?idRegistro=${idRegistro}`
+    fetch(url,{
+        method:'DELETE',
+        headers:{
+            'Content-Type': 'application/json',
+            apikey: TOKEN,
+            iduser: IDUSUARIO,
+        },
+        params: {
+            idRegistro: idRegistro
+        }
+    })
+    .then(res=> res.json())
+    .then(data => {
+        Session()
+        console.log(JSON.stringify(data) + "Eliminado correctamente");
+        
+    })
 }
