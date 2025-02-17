@@ -12,7 +12,9 @@ let IDUSUARIO;
 function agregarEvento(){
     document.querySelector("#ruteo").addEventListener("ionRouteWillChange",navegar);
     document.querySelector("#btnLogin").addEventListener("click",login);
+    document.querySelector("#btnRegistro").addEventListener("click",preRegistro);
     document.getElementById("btnAgregarActividad").addEventListener("click",agregarActividad);
+
 
 }   
 function cerrarSesion (){
@@ -52,6 +54,7 @@ function navegar(event){
     }
     else if(paginaDestino=="/registro"){
         ocultarPaginas();
+        mostrarPaises();
         document.querySelector("#registro").style.display="block";
     }
     else if(paginaDestino=="/home"){
@@ -234,4 +237,115 @@ function eliminarRegistro (idRegistro){
         console.log(JSON.stringify(data) + "Eliminado correctamente");
         
     })
+}
+
+
+
+
+
+//Milagros
+function mostrarPaises() {
+    const url = "https://movetrack.develotion.com/paises.php"; 
+    console.log(url)
+    let select= document.getElementById("selectPais");
+    try {
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
+            console.log(data.paises);
+            let option ="";
+                    if (data.paises && data.paises.length > 0) {
+                        data.paises.forEach(pais => {
+                            
+                            option += `<ion-select-option value="${pais.id}">${pais.name}</ion-select-option>`
+                          
+                            
+                        });
+
+                        select.innerHTML+=option;
+                     } else {
+                console.error("No se encontraron países.");
+            }
+        })
+        .catch(function(error) {
+            console.error("Error al obtener los países:", error);
+        });
+    } catch (error) {
+        console.error("Error al mostrar los países:", error);
+    }
+}
+
+function preRegistro(){
+    let usuario = document.getElementById("txtUsuarioRegistro").value;
+    let password = document.getElementById("txtPasswordRegistro").value;
+    let pais = Number(document.getElementById('selectPais').value);
+
+    validarDatos(usuario,password,pais);
+
+    let nuevoRegistro = {
+        usuario: usuario,
+        password: password,
+        idPais: pais
+    }
+    Registro(nuevoRegistro);
+}
+
+function Registro(registro){
+
+    try{
+       console.log(registro)
+        const url = "https://movetrack.develotion.com/usuarios.php"
+        
+        fetch(url, {
+            method:'POST',
+            headers:{
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(registro)
+        })
+        .then(function(response){
+           
+            return response.json();
+        
+        })
+        .then(function(data){
+            console.log(data)
+            if(data!=null){
+                login(registro.usuario,registro.password);
+            }else{
+               mensajeErrorR.innerHTML=`${data.error}`;
+            }
+            
+        })
+
+
+    }catch(error){
+        let mensajeErrorR = document.getElementById("txtMensajeErrorRegistro");
+        mensajeErrorR.innerHTML = `${error.message}`;
+    }
+
+   
+}
+
+
+function mostrarMensaje(mensaje) {
+    let mensajeElemento = document.createElement("div");
+    mensajeElemento.innerHTML = mensaje;
+    document.body.appendChild(mensajeElemento);
+    setTimeout(() => {
+        mensajeElemento.remove();
+    }, 3000);
+}
+
+function validarDatos(usuario,password,pais){
+    if (!usuario.trim() || !password.trim() || pais === null) {
+        throw new Error("Todos los campos son necesarios");
+    }
 }

@@ -95,7 +95,15 @@
                 </ion-toolbar>
               </ion-header>
               <ion-content>
-                Estoy en el registro
+                <div style="padding: 10px 20px">
+                    <ion-input label="Usuario" id="txtUsuarioRegistro"></ion-input>
+                    <ion-input label="Contraseña" id="txtPasswordRegistro" type="password"></ion-input>
+                    <ion-select id="selectPais" label="Selecciona un país" label-placement="floating" fill="outline"> 
+                                         
+                    </ion-select>
+                    <ion-button id="btnRegistro">Registro</ion-button> <br>
+                    <ion-text id="txtMensajeErrorRegistro" color="danger"></ion-text>
+                </div>
               </ion-content>
           </ion-page>
 
