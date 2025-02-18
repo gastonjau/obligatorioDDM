@@ -6,8 +6,8 @@ document.getElementById("cerrarSesion").style.display="none";
 
 let TOKEN;
 let IDUSUARIO;
-
-
+let TiempoTotal = 0;
+let TiempoTotalPorDia= 0;
 
 function agregarEvento(){
     document.querySelector("#ruteo").addEventListener("ionRouteWillChange",navegar);
@@ -145,18 +145,67 @@ function Session(){
     })
     .then(res=> res.json())
     .then(data => {
-        let parrafodata = document.getElementById("datos")
-        parrafodata.innerHTML = ``
-        data.registros.forEach(async (element ) => {
-            let info = await obtenerActividad(element.idActividad)
-            parrafodata.innerHTML += `<div style="border-top:1px solid black; border-bottom:1px solid black">id: ${element.id} <br> nombreActividad: ${info.nombre}<br> idUsuario: ${element.idUsuario}<br> tiempo: ${element.tiempo}<br> fecha:${element.fecha} <br> <img src="https://movetrack.develotion.com/imgs/${info.imagen}.png" width="50px" height:"50px" ></img><br><ion-button size="small" color="danger" onclick="eliminarRegistro(${element.id})">eliminar</ ion-button> </div>`
-        })
+
+        obtenerTiempoTotal(data);
+
+        obtenerTiempoPorDia(data);
+
+        mostrarDatosRegistro(data);
+
     })
 
 
 
 
 
+
+}
+
+function mostrarDatosRegistro(data){
+
+    let parrafodata = document.getElementById("datos")
+        parrafodata.innerHTML = ``
+        data.registros.forEach(async (element ) => {
+            let info = await obtenerActividad(element.idActividad)
+            parrafodata.innerHTML += `<div style="border-top:1px solid black; border-bottom:1px solid black">id: ${element.id} <br> nombreActividad: ${info.nombre}<br> idUsuario: ${element.idUsuario}<br> tiempo: ${element.tiempo}<br> fecha:${element.fecha} <br> <img src="https://movetrack.develotion.com/imgs/${info.imagen}.png" width="50px" height:"50px" ></img><br><ion-button size="small" color="danger" onclick="eliminarRegistro(${element.id})">eliminar</ ion-button> </div>`
+        
+        })
+}
+
+function obtenerTiempoPorDia(data){
+   
+    data.registros.filter((element ) => {
+
+        
+
+       
+        return element.fecha === new Date().toLocaleDateString('en-CA')
+
+        
+        
+    }).forEach((element)=>{
+        
+            TiempoTotalPorDia += +element.tiempo;
+        
+    })
+
+    document.getElementById("mostrarTiempoPorDia").innerHTML = `El tiempo total por día es: ${TiempoTotalPorDia}`;
+}
+
+function obtenerTiempoTotal(data){
+
+    data.registros.forEach((element ) => {
+        
+        if(element.tiempo){
+
+            TiempoTotal += +element.tiempo;
+            
+          
+        }
+    
+    })
+
+      document.getElementById("mostrarTiempoTotal").innerHTML = `El tiempo total es: ${TiempoTotal}`;
 }
 
 async function obtenerActividad (idActividad){
