@@ -11,7 +11,7 @@ let IDUSUARIO;
 
 function agregarEvento(){
     document.querySelector("#ruteo").addEventListener("ionRouteWillChange",navegar);
-    document.querySelector("#btnLogin").addEventListener("click",login);
+    document.querySelector("#btnLogin").addEventListener("click",preLogin);
     document.querySelector("#btnRegistro").addEventListener("click",preRegistro);
     document.getElementById("btnAgregarActividad").addEventListener("click",agregarActividad);
 
@@ -76,24 +76,28 @@ function ocultarPaginas(){
 function cerrarMenu(){
     document.querySelector("#menu").close();
 }
-function login(){
-    //obtengo los datos, los valido, llamo a la API
+
+function preLogin(){
+    //obtengo los datos
+    let usuario = document.getElementById("txtUsuario").value;
+    let password = document.getElementById("txtPassword").value;
+
+    
+        login(usuario,password)
+}
+
+function login(usuario, password){
+    // los valido, llamo a la API
     let txtMensajeError = document.getElementById("txtMensajeError");
     try{
 
-        let usuario = document.getElementById("txtUsuario").value;
-        let password = document.getElementById("txtPassword").value;
-
-
-        if(usuario.trim() == "")throw new Error("Usuario necesario para iniciar")
-        if(password.trim() == "")throw new Error("Contrasenia necesario para iniciar")
-
-        const nuevoUsuario = {
-            usuario: usuario,
-            password: password
-        }
+            if(usuario.trim() == "")throw new Error("Usuario necesario para iniciar")
+            if(password.trim() == "")throw new Error("Contrasenia necesario para iniciar")
     
-
+            const nuevoUsuario = {
+                usuario: usuario,
+                password: password
+            }
         const url = "https://movetrack.develotion.com/login.php"
 
         fetch(url,{
