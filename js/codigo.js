@@ -418,6 +418,7 @@ function agregarActividad() {
         })
             .then(res => res.json())
             .then(data => {
+
                 obtenerData();
                 mensaje.innerHTML = "Añadido correctamente";
 
@@ -438,6 +439,11 @@ function validarCamposAgregarActividad(idActividad, minutosTiempo, fecha) {
 
     if (isNaN(minutosTiempo) || minutosTiempo <= 0) {
         throw new Error("El tiempo debe ser un número positivo.");
+
+    }
+
+    if (new Date(fecha) > new Date()) {
+        throw new Error("La fecha no puede ser mayor a la actual.");
 
     }
 
