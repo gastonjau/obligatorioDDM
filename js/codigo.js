@@ -18,6 +18,11 @@ function eventos() {
     /* andan mal */
     document.getElementById("btnAgregar").addEventListener("click", agregarActividad);
     document.getElementById("btnFiltrar").addEventListener("click", filtrarPorFecha);
+
+    //Filtros
+    document.getElementById("btnMostrarHistorico").addEventListener("click", filtrarHistorico);
+    document.getElementById("btnMostrarUltimaSemana").addEventListener("click", filtrarPorSemana);
+    document.getElementById("btnMostrarUltimoMes").addEventListener("click", filtrarPorMes);
 }
 
 /* navegar entre las páginas de la app */
@@ -51,7 +56,6 @@ function navegar(event) {
         document.querySelector("#home").style.display = "block";
     } else if (paginaDestino == "/agregarRegistro") {
         ocultarPaginas();
-        obtenerActividad();
         mostrarActividadesRegistro();
         document.querySelector("#agregarRegistro").style.display = "block";
     } else if (paginaDestino == "/registroAct") {
@@ -233,29 +237,6 @@ function mostrarPaises() {
     }
 }
 
-async function  Session() {
-    console.log("TOKEN:", TOKEN)
-    TOKEN = localStorage.getItem("TOKEN")
-    IDUSUARIO = localStorage.getItem("IDUSUARIO")
-
-    let url = `https://movetrack.develotion.com/registros.php?idUsuario=${+IDUSUARIO}`
-    let data = await fetch(url, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            apikey: TOKEN,
-            iduser: +IDUSUARIO,
-        },
-        params: {
-            idUsuario: +IDUSUARIO
-        }
-    })
-    let info = await data.json()
-    
-    return info
-
-
-}
 
 function mostrarActividadesRegistro(){
     TOKEN = localStorage.getItem("TOKEN")
@@ -301,7 +282,6 @@ function mostrarActividadesRegistro(){
 }
 async function obtenerData() {
 
-    let data = await Session();
 
     mostrarDatosRegistro();
 
@@ -309,8 +289,6 @@ async function obtenerData() {
 
     obtenerTiempoPorDia();
 
-
-    filtrarPorFecha();
 }
 
 async function mostrarDatosRegistro() {
@@ -333,10 +311,12 @@ async function mostrarDatosRegistro() {
     let infor = await data.json()
 
     let parrafodata = document.getElementById("datos")
-    if(infor.registros.length == 0){
+    parrafodata.innerHTML = ``
+    if(infor.registros.length < 1){
         parrafodata.innerHTML = `<br><p>No hay registros</p><br>`
     }
     infor.registros.forEach(async (element) => {
+        console.log(element);
         let info = await obtenerActividad(element.idActividad)
         parrafodata.innerHTML += `<div style="border-top:1px solid black; border-bottom:1px solid black">Id: ${element.id} <br> Nombre de Actividad: ${info.nombre}<br> Tiempo: ${element.tiempo}<br> Fecha:${element.fecha} <br> <img src="https://movetrack.develotion.com/imgs/${info.imagen}.png" width="50px" height:"50px" ></img><br><ion-button size="small" color="danger" onclick="eliminarRegistro(${element.id})">eliminar</ ion-button> </div>`
     })
@@ -464,10 +444,10 @@ function agregarActividad() {
             .then(res => res.json())
             .then(data => {
 
-                obtenerData();
                 mensaje.innerHTML = "Añadido correctamente";
-
-            })
+                obtenerData();
+                
+            })  
 
     } catch (error) {
         let mensajeError = document.getElementById("txtMensajeErrorActividad");
@@ -557,6 +537,121 @@ async function filtrarPorFecha() {
     })
 
 }
+
+async function filtrarHistorico (){
+    TOKEN = localStorage.getItem("TOKEN")
+    IDUSUARIO = localStorage.getItem("IDUSUARIO")
+
+    let url = `https://movetrack.develotion.com/registros.php?idUsuario=${+IDUSUARIO}`
+    let info = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            apikey: TOKEN,
+            iduser: +IDUSUARIO,
+        },
+        params: {
+            idUsuario: +IDUSUARIO
+        }
+    })
+    let data = await info.json();
+
+    let parrafodata = document.getElementById("datos");
+
+    if (!data.registros || data.registros.length === 0) {
+        parrafodata.innerHTML = "<p>No hay registros</p>";
+        return;
+    }
+
+    parrafodata.innerHTML = ``
+    
+
+    data.registros.forEach(async (element) => {
+        
+        let info = await obtenerActividad(element.idActividad)
+        parrafodata.innerHTML += `<div style="border-top:1px solid black; border-bottom:1px solid black">id: ${element.id} <br> nombreActividad: ${info.nombre}<br> idUsuario: ${element.idUsuario}<br> tiempo: ${element.tiempo}<br> fecha:${element.fecha} <br> <img src="https://movetrack.develotion.com/imgs/${info.imagen}.png" width="50px" height:"50px" ></img><br><ion-button size="small" color="danger" onclick="eliminarRegistro(${element.id})">eliminar</ ion-button> </div>`
+        
+    })
+}
+
+async function filtrarPorSemana (){
+    TOKEN = localStorage.getItem("TOKEN")
+    IDUSUARIO = localStorage.getItem("IDUSUARIO")
+
+    let url = `https://movetrack.develotion.com/registros.php?idUsuario=${+IDUSUARIO}`
+    let info = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            apikey: TOKEN,
+            iduser: +IDUSUARIO,
+        },
+        params: {
+            idUsuario: +IDUSUARIO
+        }
+    })
+    let data = await info.json();
+
+    let parrafodata = document.getElementById("datos");
+
+    if (!data.registros || data.registros.length === 0) {
+        parrafodata.innerHTML = "<p>No hay registros</p>";
+        return;
+    }
+
+    parrafodata.innerHTML = ``
+    let haceUnaSemana = new Date();
+    haceUnaSemana.setDate(haceUnaSemana.getDate() - 7);
+
+    data.registros.forEach(async (element) => {
+        let fechaRegistro = new Date(element.fecha);
+        if (fechaRegistro >= haceUnaSemana) {
+            let info = await obtenerActividad(element.idActividad)
+            parrafodata.innerHTML += `<div style="border-top:1px solid black; border-bottom:1px solid black">id: ${element.id} <br> nombreActividad: ${info.nombre}<br> idUsuario: ${element.idUsuario}<br> tiempo: ${element.tiempo}<br> fecha:${element.fecha} <br> <img src="https://movetrack.develotion.com/imgs/${info.imagen}.png" width="50px" height:"50px" ></img><br><ion-button size="small" color="danger" onclick="eliminarRegistro(${element.id})">eliminar</ ion-button> </div>`
+        }
+    })
+}
+async function filtrarPorMes (){
+    TOKEN = localStorage.getItem("TOKEN")
+    IDUSUARIO = localStorage.getItem("IDUSUARIO")
+
+    let url = `https://movetrack.develotion.com/registros.php?idUsuario=${+IDUSUARIO}`
+    let info = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            apikey: TOKEN,
+            iduser: +IDUSUARIO,
+        },
+        params: {
+            idUsuario: +IDUSUARIO
+        }
+    })
+    let data = await info.json();
+
+    let parrafodata = document.getElementById("datos");
+
+    if (!data.registros || data.registros.length === 0) {
+        parrafodata.innerHTML = "<p>No hay registros</p>";
+        return;
+    }
+
+    parrafodata.innerHTML = ``
+    let haceUnaSemana = new Date();
+    haceUnaSemana.setDate(haceUnaSemana.getDate() - 30);
+
+    data.registros.forEach(async (element) => {
+        let fechaRegistro = new Date(element.fecha);
+        if (fechaRegistro >= haceUnaSemana) {
+            let info = await obtenerActividad(element.idActividad)
+            parrafodata.innerHTML += `<div style="border-top:1px solid black; border-bottom:1px solid black">id: ${element.id} <br> nombreActividad: ${info.nombre}<br> idUsuario: ${element.idUsuario}<br> tiempo: ${element.tiempo}<br> fecha:${element.fecha} <br> <img src="https://movetrack.develotion.com/imgs/${info.imagen}.png" width="50px" height:"50px" ></img><br><ion-button size="small" color="danger" onclick="eliminarRegistro(${element.id})">eliminar</ ion-button> </div>`
+        }
+    })
+}
+
+
+
+
 
 function mostrarMensaje(mensaje) {
     let mensajeElemento = document.createElement("div");
