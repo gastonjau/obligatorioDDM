@@ -344,13 +344,29 @@ async function mostrarDatosRegistro() {
 }
 
 
-function obtenerTiempoPorDia(data) {
+async function obtenerTiempoPorDia() {
 
-    data.registros.filter((element) => {
+    let url = `https://movetrack.develotion.com/registros.php?idUsuario=${+IDUSUARIO}`
+    let info = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            apikey: TOKEN,
+            iduser: +IDUSUARIO,
+        },
+        params: {
+            idUsuario: +IDUSUARIO
+        }
+    })
+    let data = await info.json()
+
+    let fechaReg = data.registros.filter((element) => {
 
         return element.fecha === new Date().toLocaleDateString('en-CA')
 
-    }).forEach((element) => {
+    })
+    TiempoTotalPorDia = 0;
+    fechaReg.forEach((element) => {
 
         TiempoTotalPorDia += +element.tiempo;
 
