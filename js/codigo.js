@@ -307,10 +307,10 @@ async function obtenerData() {
 
     obtenerTiempoTotal();
 
-    obtenerTiempoPorDia(data);
+    obtenerTiempoPorDia();
 
 
-    filtrarPorFecha(data);
+    filtrarPorFecha();
 }
 
 async function mostrarDatosRegistro() {
@@ -518,19 +518,41 @@ function eliminarRegistro(idRegistro) {
 }
 
 
-function filtrarPorFecha(data) {
+async function filtrarPorFecha() {
+    TOKEN = localStorage.getItem("TOKEN")
+    IDUSUARIO = localStorage.getItem("IDUSUARIO")
 
-    let fecha1 = document.querySelector("#fecha1").value;
-    let fecha2 = document.querySelector("#fecha2").value;
+    let url = `https://movetrack.develotion.com/registros.php?idUsuario=${+IDUSUARIO}`
+    let info = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            apikey: TOKEN,
+            iduser: +IDUSUARIO,
+        },
+        params: {
+            idUsuario: +IDUSUARIO
+        }
+    })
+    let data = await info.json();
 
-    let parrafodata = document.getElementById("datos")
+    let fecha1 = new Date(document.querySelector("#fecha1").value);
+    let fecha2 = new Date(document.querySelector("#fecha2").value);
+    let parrafodata = document.getElementById("datos");
+
+    parrafodata.innerHTML = "";
+
+    if (!data.registros || data.registros.length === 0) {
+        parrafodata.innerHTML = "<p>No hay registros</p>";
+        return;
+    }
 
     parrafodata.innerHTML = ``
     data.registros.forEach(async (element) => {
-        if (element.fecha >= fecha1 && element.fecha <= fecha2) {
+        let fechaRegistro = new Date(element.fecha);
+        if (fechaRegistro >= fecha1 && fechaRegistro <= fecha2) {
             let info = await obtenerActividad(element.idActividad)
             parrafodata.innerHTML += `<div style="border-top:1px solid black; border-bottom:1px solid black">id: ${element.id} <br> nombreActividad: ${info.nombre}<br> idUsuario: ${element.idUsuario}<br> tiempo: ${element.tiempo}<br> fecha:${element.fecha} <br> <img src="https://movetrack.develotion.com/imgs/${info.imagen}.png" width="50px" height:"50px" ></img><br><ion-button size="small" color="danger" onclick="eliminarRegistro(${element.id})">eliminar</ ion-button> </div>`
-
         }
     })
 
