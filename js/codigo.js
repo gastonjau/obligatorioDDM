@@ -250,7 +250,7 @@ async function  Session() {
             idUsuario: +IDUSUARIO
         }
     })
-    let info = data.json()
+    let info = await data.json()
     
     return info
 
@@ -303,27 +303,44 @@ async function obtenerData() {
 
     let data = await Session();
 
-    obtenerTiempoTotal(data);
+    mostrarDatosRegistro();
+
+    obtenerTiempoTotal();
 
     obtenerTiempoPorDia(data);
 
-    mostrarDatosRegistro(data);
 
     filtrarPorFecha(data);
 }
 
-function mostrarDatosRegistro(data) {
+async function mostrarDatosRegistro() {
+
+    TOKEN = localStorage.getItem("TOKEN")
+    IDUSUARIO = localStorage.getItem("IDUSUARIO")
+
+    let url = `https://movetrack.develotion.com/registros.php?idUsuario=${+IDUSUARIO}`
+    let data = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            apikey: TOKEN,
+            iduser: +IDUSUARIO,
+        },
+        params: {
+            idUsuario: +IDUSUARIO
+        }
+    })
+    let infor = await data.json()
 
     let parrafodata = document.getElementById("datos")
-    parrafodata.innerHTML = ``
-    console.log(data)
-    data.registros.forEach(async (element) => {
-        
+    if(infor.registros.length == 0){
+        parrafodata.innerHTML = `<br><p>No hay registros</p><br>`
+    }
+    infor.registros.forEach(async (element) => {
         let info = await obtenerActividad(element.idActividad)
-        
-        parrafodata.innerHTML += `<div style="border-top:1px solid black; border-bottom:1px solid black">id: ${element.id} <br> nombreActividad: ${info.nombre}<br> idUsuario: ${element.idUsuario}<br> tiempo: ${element.tiempo}<br> fecha:${element.fecha} <br> <img src="https://movetrack.develotion.com/imgs/${info.imagen}.png" width="50px" height:"50px" ></img><br><ion-button size="small" color="danger" onclick="eliminarRegistro(${element.id})">eliminar</ ion-button> </div>`
-
+        parrafodata.innerHTML += `<div style="border-top:1px solid black; border-bottom:1px solid black">Id: ${element.id} <br> Nombre de Actividad: ${info.nombre}<br> Tiempo: ${element.tiempo}<br> Fecha:${element.fecha} <br> <img src="https://movetrack.develotion.com/imgs/${info.imagen}.png" width="50px" height:"50px" ></img><br><ion-button size="small" color="danger" onclick="eliminarRegistro(${element.id})">eliminar</ ion-button> </div>`
     })
+    
 }
 
 
@@ -342,16 +359,29 @@ function obtenerTiempoPorDia(data) {
     document.getElementById("mostrarTiempoPorDia").innerHTML = `El tiempo total por día es: ${TiempoTotalPorDia}`;
 }
 
-function obtenerTiempoTotal(data) {
+async function obtenerTiempoTotal() {
+
+    TOKEN = localStorage.getItem("TOKEN")
+    IDUSUARIO = localStorage.getItem("IDUSUARIO")
+
+    let url = `https://movetrack.develotion.com/registros.php?idUsuario=${+IDUSUARIO}`
+    let info = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            apikey: TOKEN,
+            iduser: +IDUSUARIO,
+        },
+        params: {
+            idUsuario: +IDUSUARIO
+        }
+    })
+    let data = await info.json()
+
+    TiempoTotal = 0;
 
     data.registros.forEach((element) => {
-
-        if (element.tiempo) {
-
-            TiempoTotal += +element.tiempo;
-
-        }
-
+            TiempoTotal += element.tiempo;
     })
 
     document.getElementById("mostrarTiempoTotal").innerHTML = `El tiempo total es: ${TiempoTotal}`;
@@ -372,11 +402,10 @@ async function obtenerActividad(idActividad) {
         });
 
         const data = await res.json();
-        console.log(idActividad)
+        
 
         const act = data.actividades.filter(actividad => actividad.id == idActividad);
 
-        console.log(act);
 
         return act ? act[0] : "Actividad no encontrada";
 
@@ -468,10 +497,7 @@ function eliminarRegistro(idRegistro) {
     })
         .then(res => res.json())
         .then(data => {
-
-            console.log(JSON.stringify(data) + "Eliminado correctamente");
-            obtenerData();
-
+            obtenerData()
         })
 }
 
