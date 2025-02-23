@@ -12,7 +12,7 @@ let TiempoTotal = 0;
 let TiempoTotalPorDia = 0;
 let latitudOrigen = "";
 let longitudOrigen = "";
-let map;
+let map = null;
 
 let ubicaciones = [{
     "latitud": "32.738620",
@@ -80,8 +80,9 @@ function navegar(event) {
         document.querySelector("#registroAct").style.display = "block";
     }else if(paginaDestino =="/mapa"){
         ocultarPaginas();
-        mostrarMapa();
+        
         document.querySelector("#mapa").style.display="block";
+        mostrarMapa();
     }
 
 }
@@ -681,21 +682,24 @@ async function filtrarPorMes() {
 
 function mostrarMapa() {
 
-    if (map != null) {
+    if (!latitudOrigen || !longitudOrigen) {
+        console.log("No se ha obtenido la ubicación aún.");
+        return;
+    }
+
+    if (map !== null) {
         map.remove();
     }
-    map = L.map('mapa').fitWorld();
-
+    
+    map = L.map('map').fitWorld();
+    console.log("Latitud:", latitudOrigen, "Longitud:", longitudOrigen);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '© OpenStreetMap'
     }).addTo(map);
     L.marker([latitudOrigen, longitudOrigen]).addTo(map)
         .bindPopup("Mi ubicación").addTo(map).openPopup();
-    ubicaciones.forEach(ubicacion => {
-        L.marker([ubicacion.latitud, ubicacion.longitud]).addTo(map)
-            .bindPopup(ubicacion.nombre).addTo(map);
-    })
+        mostrarMarcadorPais();
 }
 
 function guardarUbicacion(position) {
@@ -718,6 +722,7 @@ function evaluarError(error) {
     }
 }
 
+
 function mostrarMensaje(mensaje, tiempo = 3000) {
     let mensajeElemento = document.createElement("div");
     mensajeElemento.innerHTML = mensaje;
@@ -727,3 +732,48 @@ function mostrarMensaje(mensaje, tiempo = 3000) {
     }, tiempo);
 }
 
+function mostrarMarcadorPais (){
+    TOKEN = localStorage.getItem("TOKEN")
+    IDUSUARIO = localStorage.getItem("IDUSUARIO")
+    let url = `https://movetrack.develotion.com/paises.php`
+    fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            apikey: TOKEN,
+            iduser: IDUSUARIO,
+        }
+    })
+        .then(res => res.json())
+        .then(data => {
+            // id, latitud y longitud
+            data.paises.forEach(async pais => {
+                const cantidadUsuario = await obtenerCantidadPersonasPais(pais.id);
+                console.log(cantidadUsuario);
+                L.marker([pais.latitude, pais.longitude]).addTo(map)
+                .bindPopup(`${pais.name}: ${cantidadUsuario} usuarios`).addTo(map).openPopup();
+                // console.log(pais);
+            })
+        })
+}
+
+async function obtenerCantidadPersonasPais(idPais){
+    TOKEN = localStorage.getItem("TOKEN")
+    IDUSUARIO = localStorage.getItem("IDUSUARIO")
+    let url = `https://movetrack.develotion.com/usuariosPorPais.php`
+    let info  = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            apikey: TOKEN,
+            iduser: IDUSUARIO,
+        }
+    })
+    let data = await info.json()
+
+    const paisEncontrado = data.paises.find(pais => pais.id == idPais);
+
+    return paisEncontrado ? paisEncontrado.cantidadDeUsuarios : 0;
+        
+
+}
