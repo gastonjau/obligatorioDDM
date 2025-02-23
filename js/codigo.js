@@ -182,14 +182,15 @@ function preRegistro() {
         };
 
         Registro(nuevoRegistro);
+
     } catch (error) {
+        console.log("error"+ error.message);
         mensajeError.innerHTML = error.message;
     }
 }
 
 function Registro(registro) {
 
-    try {
         console.log(registro)
         const url = "https://movetrack.develotion.com/usuarios.php"
 
@@ -206,20 +207,19 @@ function Registro(registro) {
 
             })
             .then(function (data) {
-                console.log(data)
+
+                if(data.mensaje){
+                    throw new Error(data.mensaje);
+                }
                 if (data != null) {
                     login(registro.usuario, registro.password);
-                } else {
-                    mensajeErrorR.innerHTML = `${data.error}`;
                 }
 
+                
+
+            }).catch(err=>{
+                document.getElementById("txtMensajeErrorRegistro").innerHTML = `${err.message}`;
             })
-
-
-    } catch (error) {
-        let mensajeError = document.getElementById("txtMensajeErrorRegistro");
-        mensajeError.innerHTML = `${error.message}`;
-    }
 
 
 }
@@ -682,15 +682,9 @@ async function filtrarPorMes() {
 
 function mostrarMapa() {
 
-    if (!latitudOrigen || !longitudOrigen) {
-        console.log("No se ha obtenido la ubicación aún.");
-        return;
-    }
-
-    if (map !== null) {
+    if (map != null) {
         map.remove();
     }
-    
     map = L.map('map').fitWorld();
     console.log("Latitud:", latitudOrigen, "Longitud:", longitudOrigen);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
