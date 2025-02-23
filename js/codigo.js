@@ -3,19 +3,36 @@
 eventos();
 ocultarPaginas();
 document.getElementById("cerrarSesion").style.display = "none";
+navigator.geolocation.getCurrentPosition(guardarUbicacion,evaluarError);
 
 /* variables globales */
 let TOKEN;
 let IDUSUARIO;
 let TiempoTotal = 0;
 let TiempoTotalPorDia = 0;
+let latitudOrigen = "";
+let longitudOrigen = "";
+let map;
+
+let ubicaciones = [{
+    "latitud": "32.738620",
+    "longitud": "64.217640",
+    "nombre": "Afghanistan",
+    "id":"1"
+},
+{
+    "latitud": "60.174584", 
+    "longitud": "19.909959",
+    "nombre": "Aland Islands",
+    "id":"2"
+}];
 
 /* agregar eventos a los botones */
 function eventos() {
     document.querySelector("#ruteo").addEventListener("ionRouteWillChange", navegar);
     document.querySelector("#btnLogin").addEventListener("click", preLogin);
     document.querySelector("#btnRegistro").addEventListener("click", preRegistro);
-    /* andan mal */
+
     document.getElementById("btnAgregar").addEventListener("click", agregarActividad);
     document.getElementById("btnFiltrar").addEventListener("click", filtrarPorFecha);
 
@@ -61,6 +78,10 @@ function navegar(event) {
     } else if (paginaDestino == "/registroAct") {
         ocultarPaginas();
         document.querySelector("#registroAct").style.display = "block";
+    }else if(paginaDestino =="/mapa"){
+        ocultarPaginas();
+        mostrarMapa();
+        document.querySelector("#mapa").style.display="block";
     }
 
 }
@@ -101,6 +122,7 @@ function preLogin() {
 function login(usuario, password) {
 
     let txtMensajeError = document.getElementById("txtMensajeError");
+
     try {
 
         if (usuario.trim() == "") throw new Error("Usuario necesario para iniciar")
@@ -140,20 +162,28 @@ function login(usuario, password) {
 
 
 function preRegistro() {
+
+    let mensajeError = document.getElementById("txtMensajeErrorRegistro");
+
     let usuario = document.getElementById("txtUsuarioRegistro").value;
     let password = document.getElementById("txtPasswordRegistro").value;
     let pais = Number(document.getElementById('selectPais').value);
 
-    if (usuario.trim() == "") throw new Error("Usuario necesario para iniciar")
 
-    validarDatos(usuario, password, pais)
 
-    let nuevoRegistro = {
-        usuario: usuario,
-        password: password,
-        idPais: pais
+    try {
+        validarDatos(usuario, password, pais);
+
+        let nuevoRegistro = {
+            usuario: usuario,
+            password: password,
+            idPais: pais
+        };
+
+        Registro(nuevoRegistro);
+    } catch (error) {
+        mensajeError.innerHTML = error.message;
     }
-    Registro(nuevoRegistro);
 }
 
 function Registro(registro) {
@@ -186,17 +216,22 @@ function Registro(registro) {
 
 
     } catch (error) {
-        let mensajeErrorR = document.getElementById("txtMensajeErrorRegistro");
-        mensajeErrorR.innerHTML = `${error.message}`;
+        let mensajeError = document.getElementById("txtMensajeErrorRegistro");
+        mensajeError.innerHTML = `${error.message}`;
     }
 
 
 }
 
 function validarDatos(usuario, password, pais) {
-    if (!usuario.trim() || !password.trim() || pais === null) {
-        throw new Error("Todos los campos son necesarios");
-    }
+
+    if (usuario.trim() == "") throw new Error("Debes ingresar un nombre de usuario");
+
+    if (password.trim() == "") throw new Error("Debes ingresar una contraseña");
+
+    if (isNaN(pais)) throw new Error("Debes seleccionar un país");
+
+    if (pais === 0) throw new Error("Debes seleccionar un país");
 }
 
 function mostrarPaises() {
@@ -238,7 +273,7 @@ function mostrarPaises() {
 }
 
 
-function mostrarActividadesRegistro(){
+function mostrarActividadesRegistro() {
     TOKEN = localStorage.getItem("TOKEN")
     IDUSUARIO = localStorage.getItem("IDUSUARIO")
     const url = "https://movetrack.develotion.com/actividades.php";
@@ -252,13 +287,13 @@ function mostrarActividadesRegistro(){
                 iduser: +IDUSUARIO,
             }
         })
-      
+
             .then(function (response) {
                 return response.json();
             })
             .then(function (data) {
                 console.log(data);
-          
+
                 if (data.actividades && data.actividades.length > 0) {
                     data.actividades.forEach(async act => {
 
@@ -268,16 +303,16 @@ function mostrarActividadesRegistro(){
 
                     });
 
-                    
+
                 } else {
-                    console.error("No se encontraron países.");
+                    console.error("No se encontraron actividades.");
                 }
             })
             .catch(function (error) {
-                console.error("Error al obtener los países:", error);
+                console.error("Error al obtener los actividades:", error);
             });
     } catch (error) {
-        console.error("Error al mostrar los países:", error);
+        console.error("Error al mostrar los actividades:", error);
     }
 }
 async function obtenerData() {
@@ -312,7 +347,7 @@ async function mostrarDatosRegistro() {
 
     let parrafodata = document.getElementById("datos")
     parrafodata.innerHTML = ``
-    if(infor.registros.length < 1){
+    if (infor.registros.length < 1) {
         parrafodata.innerHTML = `<br><p>No hay registros</p><br>`
     }
     infor.registros.forEach(async (element) => {
@@ -320,7 +355,7 @@ async function mostrarDatosRegistro() {
         let info = await obtenerActividad(element.idActividad)
         parrafodata.innerHTML += `<div style="border-top:1px solid black; border-bottom:1px solid black">Id: ${element.id} <br> Nombre de Actividad: ${info.nombre}<br> Tiempo: ${element.tiempo}<br> Fecha:${element.fecha} <br> <img src="https://movetrack.develotion.com/imgs/${info.imagen}.png" width="50px" height:"50px" ></img><br><ion-button size="small" color="danger" onclick="eliminarRegistro(${element.id})">eliminar</ ion-button> </div>`
     })
-    
+
 }
 
 
@@ -377,7 +412,7 @@ async function obtenerTiempoTotal() {
     TiempoTotal = 0;
 
     data.registros.forEach((element) => {
-            TiempoTotal += element.tiempo;
+        TiempoTotal += element.tiempo;
     })
 
     document.getElementById("mostrarTiempoTotal").innerHTML = `El tiempo total es: ${TiempoTotal}`;
@@ -398,7 +433,7 @@ async function obtenerActividad(idActividad) {
         });
 
         const data = await res.json();
-        
+
 
         const act = data.actividades.filter(actividad => actividad.id == idActividad);
 
@@ -446,8 +481,8 @@ function agregarActividad() {
 
                 mensaje.innerHTML = "Añadido correctamente";
                 obtenerData();
-                
-            })  
+
+            })
 
     } catch (error) {
         let mensajeError = document.getElementById("txtMensajeErrorActividad");
@@ -457,20 +492,13 @@ function agregarActividad() {
 
 function validarCamposAgregarActividad(idActividad, minutosTiempo, fecha) {
 
-    if (!idActividad || !minutosTiempo || !fecha) {
-        throw new Error("Todos los campos deben estar completos.");
+    if (isNaN(idActividad))throw new Error("Debes seleccionar una actividad"); 
 
-    }
+    if (isNaN(minutosTiempo) || minutosTiempo <= 0) throw new Error("El tiempo debe ser un número positivo y mayor a 0."); 
+        
+    if(!fecha)throw new Error("Debes ingresar una fecha");
 
-    if (isNaN(minutosTiempo) || minutosTiempo <= 0) {
-        throw new Error("El tiempo debe ser un número positivo.");
-
-    }
-
-    if (new Date(fecha) > new Date()) {
-        throw new Error("La fecha no puede ser mayor a la actual.");
-
-    }
+    if (new Date(fecha) > new Date()) throw new Error("La fecha no puede ser mayor a la actual."); 
 
     return true;
 }
@@ -538,7 +566,7 @@ async function filtrarPorFecha() {
 
 }
 
-async function filtrarHistorico (){
+async function filtrarHistorico() {
     TOKEN = localStorage.getItem("TOKEN")
     IDUSUARIO = localStorage.getItem("IDUSUARIO")
 
@@ -564,17 +592,17 @@ async function filtrarHistorico (){
     }
 
     parrafodata.innerHTML = ``
-    
+
 
     data.registros.forEach(async (element) => {
-        
+
         let info = await obtenerActividad(element.idActividad)
         parrafodata.innerHTML += `<div style="border-top:1px solid black; border-bottom:1px solid black">id: ${element.id} <br> nombreActividad: ${info.nombre}<br> idUsuario: ${element.idUsuario}<br> tiempo: ${element.tiempo}<br> fecha:${element.fecha} <br> <img src="https://movetrack.develotion.com/imgs/${info.imagen}.png" width="50px" height:"50px" ></img><br><ion-button size="small" color="danger" onclick="eliminarRegistro(${element.id})">eliminar</ ion-button> </div>`
-        
+
     })
 }
 
-async function filtrarPorSemana (){
+async function filtrarPorSemana() {
     TOKEN = localStorage.getItem("TOKEN")
     IDUSUARIO = localStorage.getItem("IDUSUARIO")
 
@@ -611,7 +639,7 @@ async function filtrarPorSemana (){
         }
     })
 }
-async function filtrarPorMes (){
+async function filtrarPorMes() {
     TOKEN = localStorage.getItem("TOKEN")
     IDUSUARIO = localStorage.getItem("IDUSUARIO")
 
@@ -651,14 +679,51 @@ async function filtrarPorMes (){
 
 
 
+function mostrarMapa() {
 
+    if (map != null) {
+        map.remove();
+    }
+    map = L.map('mapa').fitWorld();
 
-function mostrarMensaje(mensaje) {
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
+    L.marker([latitudOrigen, longitudOrigen]).addTo(map)
+        .bindPopup("Mi ubicación").addTo(map).openPopup();
+    ubicaciones.forEach(ubicacion => {
+        L.marker([ubicacion.latitud, ubicacion.longitud]).addTo(map)
+            .bindPopup(ubicacion.nombre).addTo(map);
+    })
+}
+
+function guardarUbicacion(position) {
+    latitudOrigen = position.coords.latitude;
+    longitudOrigen = position.coords.longitude;
+}
+
+function evaluarError(error) {
+    console.log(error);
+    switch (error.code) {
+        case 1:
+            mostrarMensaje("El usuario no habilito la geolocalización");
+            break;
+        case 2:
+            mostrarMensaje("No se pudo obtener la geolocalización");
+            break;
+        case 3:
+            mostrarMensaje("Se agotó el tiempo para obtener la geolocalización");
+            break;
+    }
+}
+
+function mostrarMensaje(mensaje, tiempo = 3000) {
     let mensajeElemento = document.createElement("div");
     mensajeElemento.innerHTML = mensaje;
     document.body.appendChild(mensajeElemento);
     setTimeout(() => {
         mensajeElemento.remove();
-    }, 3000);
+    }, tiempo);
 }
 
